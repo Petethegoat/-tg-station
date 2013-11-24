@@ -8,6 +8,15 @@
 		if((FAT in src.mutations) && src.m_intent == "run" && src.bodytemperature <= 360)
 			src.bodytemperature += 2
 
+		//grabs
+		var/list/grabs = list()
+		if(istype(l_hand, /obj/item/weapon/grab))
+			grabs += l_hand
+		if(istype(r_hand, /obj/item/weapon/grab))
+			grabs += r_hand
+		for(var/obj/item/weapon/grab/G in grabs)
+			G.move(NewLoc)
+
 /mob/living/carbon/relaymove(var/mob/user, direction)
 	if(user in src.stomach_contents)
 		if(prob(40))

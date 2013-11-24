@@ -217,7 +217,7 @@
 			new meat_type(src.loc)
 	..()
 
-
+f
 /mob/living/simple_animal/blob_act()
 	adjustBruteLoss(20)
 	return
@@ -279,7 +279,6 @@
 			M.put_in_active_hand(G)
 
 			grabbed_by += G
-			G.synch()
 
 			LAssailant = M
 
@@ -315,7 +314,6 @@
 			M.put_in_active_hand(G)
 
 			grabbed_by += G
-			G.synch()
 			LAssailant = M
 
 			playsound(loc, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)

@@ -1,14 +1,17 @@
-#define UPGRADE_COOLDOWN	40
-#define UPGRADE_KILL_TIMER	100
+#define UPGRADE_COOLDOWN	30
+#define UPGRADE_KILL_TIMER	80
+
+#define FIREMAN 1
 
 /obj/item/weapon/grab
 	name = "grab"
+	icon = 'icons/mob/screen_gen.dmi'
+	icon_state = "reinforce"
 	flags = NOBLUDGEON
-	var/obj/screen/grab/hud = null
 	var/mob/affecting = null
 	var/mob/assailant = null
 	var/state = GRAB_PASSIVE
-
+	var/grab_flags = 0
 	var/allow_upgrade = 1
 	var/last_upgrade = 0
 
@@ -28,11 +31,6 @@
 		del(src)
 		return
 
-	hud = new /obj/screen/grab(src)
-	hud.icon_state = "reinforce"
-	hud.name = "reinforce grab"
-	hud.master = src
-
 
 //Used by throw code to hand over the mob, instead of throwing the grab. The grab is then deleted by the throw code.
 /obj/item/weapon/grab/proc/throw()
@@ -44,24 +42,14 @@
 	return null
 
 
-//This makes sure that the grab screen object is displayed in the correct hand.
-/obj/item/weapon/grab/proc/synch()
-	if(affecting)
-		if(assailant.r_hand == src)
-			hud.screen_loc = ui_rhand
-		else
-			hud.screen_loc = ui_lhand
-
-
 /obj/item/weapon/grab/process()
 	confirm()
 
-	if(assailant.client)
-		assailant.client.screen -= hud
-		assailant.client.screen += hud
-
 	if(assailant.pulling == affecting)
 		assailant.stop_pulling()
+
+	assailant.face_atom(affecting)
+	affecting.face_atom(assailant)
 
 	if(state <= GRAB_AGGRESSIVE)
 		allow_upgrade = 1
@@ -74,20 +62,15 @@
 			if(G.affecting != affecting)
 				allow_upgrade = 0
 		if(state == GRAB_AGGRESSIVE)
-			var/h = affecting.hand
-			affecting.hand = 0
-			affecting.drop_item()
-			affecting.hand = 1
-			affecting.drop_item()
-			affecting.hand = h
 			for(var/obj/item/weapon/grab/G in affecting.grabbed_by)
-				if(G == src) continue
+				if(G == src)
+					continue
 				if(G.state == GRAB_AGGRESSIVE)
 					allow_upgrade = 0
 		if(allow_upgrade)
-			hud.icon_state = "reinforce"
+			icon_state = "reinforce"
 		else
-			hud.icon_state = "!reinforce"
+			icon_state = "!reinforce"
 	else
 		if(!affecting.buckled)
 			affecting.loc = assailant.loc
@@ -103,14 +86,12 @@
 		affecting.losebreath = min(affecting.losebreath + 2, 3)
 
 
-/obj/item/weapon/grab/proc/s_click(obj/screen/S)
+/obj/item/weapon/grab/attack_self()
 	if(!affecting)
 		return
 	if(state == GRAB_UPGRADING)
 		return
-	if(assailant.next_move > world.time)
-		return
-	if(world.time < (last_upgrade + UPGRADE_COOLDOWN))
+	if(world.time < last_upgrade + UPGRADE_COOLDOWN)
 		return
 	if(!assailant.canmove || assailant.lying)
 		del(src)
@@ -123,7 +104,6 @@
 			return
 		assailant.visible_message("<span class='warning'>[assailant] has grabbed [affecting] aggressively (now hands)!</span>")
 		state = GRAB_AGGRESSIVE
-		icon_state = "grabbed1"
 	else
 		if(state < GRAB_NECK)
 			if(isslime(affecting))
@@ -132,18 +112,17 @@
 
 			assailant.visible_message("<span class='warning'>[assailant] has reinforced \his grip on [affecting] (now neck)!</span>")
 			state = GRAB_NECK
-			icon_state = "grabbed+1"
 			if(!affecting.buckled)
 				affecting.loc = assailant.loc
 			affecting.attack_log += "\[[time_stamp()]\] <font color='orange'>Has had their neck grabbed by [assailant.name] ([assailant.ckey])</font>"
 			assailant.attack_log += "\[[time_stamp()]\] <font color='red'>Grabbed the neck of [affecting.name] ([affecting.ckey])</font>"
 			log_attack("<font color='red'>[assailant.name] ([assailant.ckey]) grabbed the neck of [affecting.name] ([affecting.ckey])</font>")
-			hud.icon_state = "disarm/kill"
-			hud.name = "disarm/kill"
+			icon_state = "disarm/kill"
+			name = "disarm/kill"
 		else
 			if(state < GRAB_UPGRADING)
 				assailant.visible_message("<span class='danger'>[assailant] starts to tighten \his grip on [affecting]'s neck!</span>")
-				hud.icon_state = "disarm/kill1"
+				icon_state = "disarm/kill1"
 				state = GRAB_UPGRADING
 				if(do_after(assailant, UPGRADE_KILL_TIMER))
 					if(state == GRAB_KILL)
@@ -164,7 +143,7 @@
 					affecting.losebreath += 1
 				else
 					assailant.visible_message("<span class='warning'>[assailant] was unable to tighten \his grip on [affecting]'s neck!</span>")
-					hud.icon_state = "disarm/kill"
+					icon_state = "disarm/kill"
 					state = GRAB_NECK
 
 
@@ -174,8 +153,12 @@
 		del(src)
 		return 0
 
+	if(affecting.buckled)
+		del(src)
+		return 0
+
 	if(affecting)
-		if(!isturf(assailant.loc) || ( !isturf(affecting.loc) || assailant.loc != affecting.loc && get_dist(assailant, affecting) > 1) )
+		if(!isturf(assailant.loc) || (!isturf(affecting.loc) || assailant.loc != affecting.loc && get_dist(assailant, affecting) > 1) )
 			del(src)
 			return 0
 
@@ -187,26 +170,47 @@
 		return
 
 	if(M == affecting)
-		s_click(hud)
+		attack_self()
 		return
 
 	if(M == assailant && state >= GRAB_AGGRESSIVE)
-		if( (ishuman(user) && (FAT in user.mutations) && ismonkey(affecting) ) || ( isalien(user) && iscarbon(affecting) ) )
+		if((ishuman(user) && (FAT in user.mutations) && ismonkey(affecting)) || (isalien(user) && iscarbon(affecting)))
 			var/mob/living/carbon/attacker = user
 			user.visible_message("<span class='danger'>[user] is attempting to devour [affecting]!</span>")
 			if(istype(user, /mob/living/carbon/alien/humanoid/hunter))
-				if(!do_mob(user, affecting)||!do_after(user, 30)) return
+				if(!do_mob(user, affecting) || !do_after(user, 30))
+					return
 			else
-				if(!do_mob(user, affecting)||!do_after(user, 100)) return
+				if(!do_mob(user, affecting) || !do_after(user, 100))
+					return
 			user.visible_message("<span class='danger'>[user] devours [affecting]!</span>")
 			affecting.loc = user
 			attacker.stomach_contents.Add(affecting)
 			del(src)
 
 
+/obj/item/weapon/grab/MouseDrop(mob/M)
+	if(ishuman(M) && assailant == M)
+		if(state >= GRAB_AGGRESSIVE)
+			if(do_after(M, 40))
+				affecting.visible_message("<span class='danger'>[M] has pulled [affecting] into a fireman's carry!</span>", \
+										  "<span class='userdanger'>[M] has pulled [affecting] into a fireman's carry!</span>")
+				grab_flags |= FIREMAN
+				affecting.pixel_y = 10
+				affecting.resting = 1
+		else
+			M << "<span class='notice'>You'll need a better grip to do that.</span>"
+
+
+/obj/item/weapon/grab/proc/move(turf/T)
+	if(grab_flags & FIREMAN)
+		affecting.Move(T)
+
+
 /obj/item/weapon/grab/dropped()
 	del(src)
 
 /obj/item/weapon/grab/Del()
-	del(hud)
+	if(grab_flags & FIREMAN)
+		affecting.pixel_y = 0
 	..()

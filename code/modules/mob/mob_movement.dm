@@ -163,7 +163,8 @@
 			Process_Incorpmove(direct)
 			return 0
 
-	if(Process_Grab())	return
+	if(Process_Grab(direct))
+		return
 
 	if(mob.buckled)							//if we're buckled to something, tell it we moved.
 		return mob.buckled.relaymove(mob, direct)
@@ -212,38 +213,6 @@
 
 		//We are now going to move
 		moving = 1
-		//Something with pulling things
-		if(locate(/obj/item/weapon/grab, mob))
-			move_delay = max(move_delay, world.time + 7)
-			var/list/L = mob.ret_grab()
-			if(istype(L, /list))
-				if(L.len == 2)
-					L -= mob
-					var/mob/M = L[1]
-					if(M)
-						if ((get_dist(mob, M) <= 1 || M.loc == mob.loc))
-							var/turf/T = mob.loc
-							. = ..()
-							if (isturf(M.loc))
-								var/diag = get_dir(mob, M)
-								if ((diag - 1) & diag)
-								else
-									diag = null
-								if ((get_dist(mob, M) > 1 || diag))
-									step(M, get_dir(M.loc, T))
-				else
-					for(var/mob/M in L)
-						M.other_mobs = 1
-						if(mob != M)
-							M.animate_movement = 3
-					for(var/mob/M in L)
-						spawn( 0 )
-							step(M, direct)
-							return
-						spawn( 1 )
-							M.other_mobs = null
-							M.animate_movement = 2
-							return
 
 		if(mob.confused && IsEven(world.time))
 			step(mob, pick(cardinal))
@@ -257,36 +226,32 @@
 
 ///Process_Grab()
 ///Called by client/Move()
-///Checks to see if you are being grabbed and if so attemps to break it
-/client/proc/Process_Grab()
-	if(locate(/obj/item/weapon/grab, locate(/obj/item/weapon/grab, mob.grabbed_by.len)))
-		var/list/grabbing = list()
+///Checks to see if you are grabbing or being grabbed
+/client/proc/Process_Grab(direct)
+	//being grabbed
+	for(var/obj/item/weapon/grab/G in mob.grabbed_by)
+		if(G.state == GRAB_PASSIVE)
+			del(G)
 
-		if(istype(mob.l_hand, /obj/item/weapon/grab))
-			var/obj/item/weapon/grab/G = mob.l_hand
-			grabbing += G.affecting
+		if(G.state >= GRAB_AGGRESSIVE)
+			var/turf/T = get_step(get_turf(mob), direct)
+			if(get_dist(G.assailant, T) > 1 || T == get_turf(G.assailant))
+				return 1
 
-		if(istype(mob.r_hand, /obj/item/weapon/grab))
-			var/obj/item/weapon/grab/G = mob.r_hand
-			grabbing += G.affecting
+	//grabbing
+	var/list/grabs = list()
+	if(istype(mob.l_hand, /obj/item/weapon/grab))
+		grabs += mob.l_hand
+	if(istype(mob.r_hand, /obj/item/weapon/grab))
+		grabs += mob.r_hand
 
-		for(var/obj/item/weapon/grab/G in mob.grabbed_by)
-			if(G.state == GRAB_PASSIVE && !grabbing.Find(G.assailant))
-				del(G)
-
-			if(G.state == GRAB_AGGRESSIVE)
-				move_delay = world.time + 10
-				if(!prob(25))
+	for(var/obj/item/weapon/grab/G in grabs)
+		if(G.state >= GRAB_AGGRESSIVE)
+			if(!(G.grab_flags & FIREMAN))
+				var/turf/T = get_step(get_turf(mob), direct)
+				if(get_dist(G.affecting, T) > 1 || T == get_turf(G.affecting))
 					return 1
-				mob.visible_message("<span class='warning'>[mob] has broken free of [G.assailant]'s grip!</span>")
-				del(G)
 
-			if(G.state == GRAB_NECK)
-				move_delay = world.time + 10
-				if(!prob(5))
-					return 1
-				mob.visible_message("<span class='warning'>[mob] has broken free of [G.assailant]'s headlock!</span>")
-				del(G)
 	return 0
 
 
