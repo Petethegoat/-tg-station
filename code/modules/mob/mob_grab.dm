@@ -17,7 +17,6 @@
 	var/last_upgrade = 0
 
 	layer = 21
-	abstract = 1
 	item_state = "nothing"
 	w_class = 5.0
 
@@ -30,7 +29,6 @@
 
 	if(affecting.anchored)
 		del(src)
-		return
 
 
 //Used by throw code to hand over the mob, instead of throwing the grab. The grab is then deleted by the throw code.
@@ -215,3 +213,25 @@
 	if(grab_flags & FIREMAN)
 		affecting.pixel_y = 0
 	..()
+
+
+/mob/proc/grab(mob/user)
+	if(user == src)
+		return
+	if(!(status_flags & CANPUSH))
+		return
+
+	var/obj/item/weapon/grab/G = new /obj/item/weapon/grab(user, src)
+	if(buckled)
+		user << "<span class='notice'>You cannot grab [src], \he is buckled in!</span>"
+	if(!G)	//the grab will delete itself in New if affecting is anchored
+		return
+
+	add_logs(user, src, "grabbed", addition = "passively")
+
+	user.put_in_active_hand(G)
+	grabbed_by += G
+	LAssailant = user
+
+	playsound(loc, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+	visible_message("<span class='warning'>[user] has grabbed [src] passively!</span>")

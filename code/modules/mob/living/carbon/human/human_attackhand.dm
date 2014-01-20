@@ -37,26 +37,7 @@
 					src << "<span class='unconscious'>You feel a breath of fresh air enter your lungs. It feels good.</span>"
 
 		if("grab")
-			if(M == src || anchored)
-				return 0
-
-			add_logs(M, src, "grabbed", addition="passively")
-
-			if(w_uniform)
-				w_uniform.add_fingerprint(M)
-
-			var/obj/item/weapon/grab/G = new /obj/item/weapon/grab(M, src)
-			if(buckled)
-				M << "<span class='notice'>You cannot grab [src], \he is buckled in!</span>"
-			if(!G)	//the grab will delete itself in New if affecting is anchored
-				return
-			M.put_in_active_hand(G)
-			grabbed_by += G
-			LAssailant = M
-
-			playsound(loc, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
-			visible_message("<span class='warning'>[M] has grabbed [src] passively!</span>")
-			return 1
+			grab(M)
 
 		if("harm")
 			add_logs(M, src, "punched")

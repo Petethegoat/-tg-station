@@ -408,20 +408,7 @@
 			help_shake_act(M)
 
 		if ("grab")
-			if (M == src || anchored)
-				return
-			var/obj/item/weapon/grab/G = new /obj/item/weapon/grab(M, src )
-
-			M.put_in_active_hand(G)
-
-			grabbed_by += G
-
-			LAssailant = M
-
-			playsound(loc, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
-			for(var/mob/O in viewers(src, null))
-				if ((O.client && !( O.blinded )))
-					O.show_message(text("<span class='warning'> [] has grabbed [] passively!</span>", M, src), 1)
+			grab(M)
 
 		else
 
@@ -498,19 +485,7 @@
 						O.show_message(text("<span class='warning'> <B>[] has attempted to lunge at [name]!</B></span>", M), 1)
 
 		if ("grab")
-			if (M == src || anchored)
-				return
-			var/obj/item/weapon/grab/G = new /obj/item/weapon/grab(M, src )
-
-			M.put_in_active_hand(G)
-
-			grabbed_by += G
-
-			LAssailant = M
-
-			playsound(loc, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
-			for(var/mob/O in viewers(src, null))
-				O.show_message(text("<span class='warning'> [] has grabbed [name] passively!</span>", M), 1)
+			grab(M)
 
 		if ("disarm")
 			playsound(loc, 'sound/weapons/pierce.ogg', 25, 1, -1)
