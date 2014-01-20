@@ -70,9 +70,8 @@
 			icon_state = "reinforce"
 		else
 			icon_state = "!reinforce"
-	else
-		if(!affecting.buckled)
-			affecting.loc = assailant.loc
+	else if(!affecting.buckled)
+		affecting.loc = assailant.loc
 
 	if(state >= GRAB_NECK)
 		affecting.Stun(5)	//It will hamper your voice, being choked and all.
@@ -103,47 +102,45 @@
 			return
 		assailant.visible_message("<span class='warning'>[assailant] has grabbed [affecting] aggressively (now hands)!</span>")
 		state = GRAB_AGGRESSIVE
-	else
-		if(state < GRAB_NECK)
-			if(isslime(affecting))
-				assailant << "<span class='notice'>You squeeze [affecting], but nothing interesting happens.</span>"
+	else if(state < GRAB_NECK)
+		if(isslime(affecting))
+			assailant << "<span class='notice'>You squeeze [affecting], but nothing interesting happens.</span>"
+			return
+
+		assailant.visible_message("<span class='warning'>[assailant] has reinforced \his grip on [affecting] (now neck)!</span>")
+		state = GRAB_NECK
+		if(!affecting.buckled)
+			affecting.loc = assailant.loc
+		affecting.attack_log += "\[[time_stamp()]\] <font color='orange'>Has had their neck grabbed by [assailant.name] ([assailant.ckey])</font>"
+		assailant.attack_log += "\[[time_stamp()]\] <font color='red'>Grabbed the neck of [affecting.name] ([affecting.ckey])</font>"
+		log_attack("<font color='red'>[assailant.name] ([assailant.ckey]) grabbed the neck of [affecting.name] ([affecting.ckey])</font>")
+		icon_state = "choke"
+		name = "choke"
+	else if(state < GRAB_UPGRADING)
+		assailant.visible_message("<span class='danger'>[assailant] starts to tighten \his grip on [affecting]'s neck!</span>")
+		icon_state = "choke"
+		state = GRAB_UPGRADING
+		if(do_after(assailant, UPGRADE_KILL_TIMER))
+			if(state == GRAB_KILL)
 				return
+			if(!affecting)
+				del(src)
+				return
+			if(!assailant.canmove || assailant.lying)
+				del(src)
+				return
+			state = GRAB_KILL
+			assailant.visible_message("<span class='danger'>[assailant] has tightened \his grip on [affecting]'s neck!</span>")
+			affecting.attack_log += "\[[time_stamp()]\] <font color='orange'>Has been strangled (kill intent) by [assailant.name] ([assailant.ckey])</font>"
+			assailant.attack_log += "\[[time_stamp()]\] <font color='red'>Strangled (kill intent) [affecting.name] ([affecting.ckey])</font>"
+			log_attack("<font color='red'>[assailant.name] ([assailant.ckey]) Strangled (kill intent) [affecting.name] ([affecting.ckey])</font>")
 
-			assailant.visible_message("<span class='warning'>[assailant] has reinforced \his grip on [affecting] (now neck)!</span>")
-			state = GRAB_NECK
-			if(!affecting.buckled)
-				affecting.loc = assailant.loc
-			affecting.attack_log += "\[[time_stamp()]\] <font color='orange'>Has had their neck grabbed by [assailant.name] ([assailant.ckey])</font>"
-			assailant.attack_log += "\[[time_stamp()]\] <font color='red'>Grabbed the neck of [affecting.name] ([affecting.ckey])</font>"
-			log_attack("<font color='red'>[assailant.name] ([assailant.ckey]) grabbed the neck of [affecting.name] ([affecting.ckey])</font>")
-			icon_state = "disarm/kill"
-			name = "disarm/kill"
+			assailant.next_move = world.time + 10
+			affecting.losebreath += 1
 		else
-			if(state < GRAB_UPGRADING)
-				assailant.visible_message("<span class='danger'>[assailant] starts to tighten \his grip on [affecting]'s neck!</span>")
-				icon_state = "disarm/kill1"
-				state = GRAB_UPGRADING
-				if(do_after(assailant, UPGRADE_KILL_TIMER))
-					if(state == GRAB_KILL)
-						return
-					if(!affecting)
-						del(src)
-						return
-					if(!assailant.canmove || assailant.lying)
-						del(src)
-						return
-					state = GRAB_KILL
-					assailant.visible_message("<span class='danger'>[assailant] has tightened \his grip on [affecting]'s neck!</span>")
-					affecting.attack_log += "\[[time_stamp()]\] <font color='orange'>Has been strangled (kill intent) by [assailant.name] ([assailant.ckey])</font>"
-					assailant.attack_log += "\[[time_stamp()]\] <font color='red'>Strangled (kill intent) [affecting.name] ([affecting.ckey])</font>"
-					log_attack("<font color='red'>[assailant.name] ([assailant.ckey]) Strangled (kill intent) [affecting.name] ([affecting.ckey])</font>")
-
-					assailant.next_move = world.time + 10
-					affecting.losebreath += 1
-				else
-					assailant.visible_message("<span class='warning'>[assailant] was unable to tighten \his grip on [affecting]'s neck!</span>")
-					icon_state = "disarm/kill"
-					state = GRAB_NECK
+			assailant.visible_message("<span class='warning'>[assailant] was unable to tighten \his grip on [affecting]'s neck!</span>")
+			icon_state = "choke"
+			state = GRAB_NECK
 
 
 //This is used to make sure the victim hasn't managed to yackety sax away before using the grab.
@@ -179,9 +176,8 @@
 			if(istype(user, /mob/living/carbon/alien/humanoid/hunter))
 				if(!do_mob(user, affecting) || !do_after(user, 30))
 					return
-			else
-				if(!do_mob(user, affecting) || !do_after(user, 100))
-					return
+			else if(!do_mob(user, affecting) || !do_after(user, 100))
+				return
 			user.visible_message("<span class='danger'>[user] devours [affecting]!</span>")
 			affecting.loc = user
 			attacker.stomach_contents.Add(affecting)

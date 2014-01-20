@@ -235,6 +235,10 @@
 	if(Adjacent(user))
 		user.start_pulling(src)
 
+/mob/CtrlClick(var/mob/user)
+	if(Adjacent(user))
+		grab(user)
+
 /*
 	Alt click
 	Unused except for AI
