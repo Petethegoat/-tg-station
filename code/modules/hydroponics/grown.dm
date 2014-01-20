@@ -11,7 +11,6 @@
 	var/seed = ""
 	var/plantname = ""
 	var/product	//a type path
-	var/species = ""
 	var/lifespan = 0
 	var/endurance = 0
 	var/maturation = 0
@@ -20,12 +19,16 @@
 	var/potency = -1
 	var/plant_type = 0
 	icon = 'icons/obj/harvest.dmi'
-	New(newloc,newpotency)
-		if (!isnull(newpotency))
-			potency = newpotency
-		..()
-		src.pixel_x = rand(-5.0, 5)
-		src.pixel_y = rand(-5.0, 5)
+
+/obj/item/weapon/reagent_containers/food/snacks/grown/New(newloc,newpotency)
+	if (!isnull(newpotency))
+		potency = newpotency
+	..()
+	pixel_x = rand(-5.0, 5)
+	pixel_y = rand(-5.0, 5)
+
+	transform *= TransformUsingVariable(potency, 100, 0.5) //Makes the resulting produce's sprite larger or smaller based on potency!
+
 
 /obj/item/weapon/reagent_containers/food/snacks/grown/attackby(var/obj/item/O as obj, var/mob/user as mob)
 	..()
@@ -36,55 +39,20 @@
 			if(0)
 				msg += "- Plant type: <i>Normal plant</i>\n"
 			if(1)
-				msg += "- Plant type: <i>Weed</i>\n"
+				msg += "- Plant type: <i>Weed</i>.  Can grow in nutrient-poor soil.\n"
 			if(2)
-				msg += "- Plant type: <i>Mushroom</i>\n"
+				msg += "- Plant type: <i>Mushroom</i>.  Can grow in dry soil.\n"
 		msg += "- Potency: <i>[potency]</i>\n"
 		msg += "- Yield: <i>[yield]</i>\n"
 		msg += "- Maturation speed: <i>[maturation]</i>\n"
 		msg += "- Production speed: <i>[production]</i>\n"
 		msg += "- Endurance: <i>[endurance]</i>\n"
-		msg += "- Healing properties: <i>[reagents.get_reagent_amount("nutriment")]</i>\n"
+		msg += "- Nutritional value: <i>[reagents.get_reagent_amount("nutriment")]</i>\n"
+		msg += "- Other substances: <i>[reagents.total_volume-reagents.get_reagent_amount("nutriment")]</i>\n"
 		msg += "*---------*</span>"
 		usr << msg
 		return
-
-	/*if (istype(O, /obj/item/weapon/storage/bag/plants))
-		var/obj/item/weapon/plantbag/S = O
-		if (S.mode == 1)
-			for(var/obj/item/G in get_turf(src))
-				if(istype(G, /obj/item/seeds) || istype(G, /obj/item/weapon/reagent_containers/food/snacks/grown))
-					if (S.contents.len < S.capacity)
-						S.contents += G
-					else
-						user << "\blue The plant bag is full."
-						return
-			user << "\blue You pick up all the plants and seeds."
-		else
-			if (S.contents.len < S.capacity)
-				S.contents += src;
-			else
-				user << "\blue The plant bag is full."*/
 	return
-
-/*/obj/item/seeds/attackby(var/obj/item/O as obj, var/mob/user as mob)
-	if (istype(O, /obj/item/weapon/storage/bag/plants))
-		var/obj/item/weapon/plantbag/S = O
-		if (S.mode == 1)
-			for(var/obj/item/G in get_turf(src))
-				if(istype(G, /obj/item/seeds) || istype(G, /obj/item/weapon/reagent_containers/food/snacks/grown))
-					if (S.contents.len < S.capacity)
-						S.contents += G
-					else
-						user << "\blue The plant bag is full."
-						return
-			user << "\blue You pick up all the plants and seeds."
-		else
-			if (S.contents.len < S.capacity)
-				S.contents += src;
-			else
-				user << "\blue The plant bag is full."
-	return*/
 
 /obj/item/weapon/grown/attackby(var/obj/item/O as obj, var/mob/user as mob)
 	..()
@@ -95,9 +63,9 @@
 			if(0)
 				msg += "- Plant type: <i>Normal plant</i>\n"
 			if(1)
-				msg += "- Plant type: <i>Weed</i>\n"
+				msg += "- Plant type: <i>Weed</i>.  Can grow in nutrient-poor soil.\n"
 			if(2)
-				msg += "- Plant type: <i>Mushroom</i>\n"
+				msg += "- Plant type: <i>Mushroom</i>.  Can grow in dry soil.\n"
 		msg += "- Potency: <i>[potency]</i>\n"
 		msg += "- Yield: <i>[yield]</i>\n"
 		msg += "- Maturation speed: <i>[maturation]</i>\n"
@@ -424,7 +392,7 @@
 	..()
 	if(istype(W, /obj/item/weapon/circular_saw) || istype(W, /obj/item/weapon/hatchet) || istype(W, /obj/item/weapon/twohanded/fireaxe) || istype(W, /obj/item/weapon/kitchen/utensil/knife) || istype(W, /obj/item/weapon/kitchenknife) || istype(W, /obj/item/weapon/melee/energy))
 		user.show_message("<span class='notice'>You carve a face into [src]!</span>", 1)
-		new /obj/item/clothing/head/pumpkinhead (user.loc)
+		new /obj/item/clothing/head/hardhat/pumpkinhead (user.loc)
 		del(src)
 		return
 
@@ -716,7 +684,13 @@
 
 /obj/item/weapon/reagent_containers/food/snacks/grown/grass/attack_self(mob/user as mob)
 	user << "<span class='notice'>You prepare the astroturf.</span>"
-	new/obj/item/stack/tile/grass(user.loc)
+	var/location = get_turf(user)
+	var/grassAmt = 1 // The grass we're holding
+	for(var/obj/item/weapon/reagent_containers/food/snacks/grown/grass/grassToConvert in location) // The grass on the floor
+		grassAmt += 1
+		del(grassToConvert)
+	var/obj/item/stack/tile/newAstroturf = new /obj/item/stack/tile/grass(location)
+	newAstroturf.amount = grassAmt
 	del(src)
 
 /obj/item/weapon/reagent_containers/food/snacks/grown/kudzupod
@@ -727,8 +701,8 @@
 	New()
 		..()
 		spawn(5)	//So potency can be set in the proc that creates these crops
-			reagents.add_reagent("nutriment",1+round((potency / 50), 1))
-			reagents.add_reagent("anti_toxin",1+round((potency / 25), 1))
+			reagents.add_reagent("nutriment", 1+round((potency / 50), 1))
+			reagents.add_reagent("anti_toxin", 1+round((potency / 25), 1))
 			bitesize = 1+round(reagents.total_volume / 2, 1)
 
 /obj/item/weapon/reagent_containers/food/snacks/grown/icepepper
@@ -765,22 +739,22 @@
 /obj/item/weapon/reagent_containers/food/snacks/grown/mushroom/reishi
 	seed = "/obj/item/seeds/reishimycelium"
 	name = "reishi"
-	desc = "<I>Ganoderma lucidum</I>: A special fungus believed to help relieve stress."
+	desc = "<I>Ganoderma lucidum</I>: A special fungus known for its medicinal and stress relieving properties."
 	icon_state = "reishi"
 	potency = 10
 	New()
 		..()
 		spawn(5)	//So potency can be set in the proc that creates these crops
 			reagents.add_reagent("nutriment", 1)
+			reagents.add_reagent("anti_toxin", 3+round(potency / 3, 1))
 			reagents.add_reagent("stoxin", 3+round(potency / 3, 1))
-			reagents.add_reagent("space_drugs", 1+round(potency / 25, 1))
 			bitesize = 1+round(reagents.total_volume / 2, 1)
 
 /obj/item/weapon/reagent_containers/food/snacks/grown/mushroom/reishi/attackby(var/obj/item/O as obj, var/mob/user as mob)
 	. = ..()
 	if (istype(O, /obj/item/device/analyzer/plant_analyzer))
+		user << "<span class='info'>- Anti-Toxin: <i>[reagents.get_reagent_amount("anti_toxin")]%</i></span>"
 		user << "<span class='info'>- Sleep Toxin: <i>[reagents.get_reagent_amount("stoxin")]%</i></span>"
-		user << "<span class='info'>- Space Drugs: <i>[reagents.get_reagent_amount("space_drugs")]%</i></span>"
 
 /obj/item/weapon/reagent_containers/food/snacks/grown/mushroom/amanita
 	seed = "/obj/item/seeds/amanitamycelium"
@@ -793,14 +767,14 @@
 		spawn(5)	//So potency can be set in the proc that creates these crops
 			reagents.add_reagent("nutriment", 1)
 			reagents.add_reagent("amatoxin", 3+round(potency / 3, 1))
-			reagents.add_reagent("psilocybin", 1+round(potency / 25, 1))
+			reagents.add_reagent("mushroomhallucinogen", 1+round(potency / 25, 1))
 			bitesize = 1+round(reagents.total_volume / 2, 1)
 
 /obj/item/weapon/reagent_containers/food/snacks/grown/mushroom/amanita/attackby(var/obj/item/O as obj, var/mob/user as mob)
 	. = ..()
 	if (istype(O, /obj/item/device/analyzer/plant_analyzer))
 		user << "<span class='info'>- Amatoxins: <i>[reagents.get_reagent_amount("amatoxin")]%</i></span>"
-		user << "<span class='info'>- Psilocybin: <i>[reagents.get_reagent_amount("psilocybin")]%</i></span>"
+		user << "<span class='info'>- Mushroom Hallucinogen: <i>[reagents.get_reagent_amount("mushroomhallucinogen")]%</i></span>"
 
 /obj/item/weapon/reagent_containers/food/snacks/grown/mushroom/angel
 	seed = "/obj/item/seeds/angelmycelium"
@@ -813,14 +787,14 @@
 		spawn(5)	//So potency can be set in the proc that creates these crops
 			reagents.add_reagent("nutriment", 1+round((potency / 50), 1))
 			reagents.add_reagent("amatoxin", 13+round(potency / 3, 1))
-			reagents.add_reagent("psilocybin", 1+round(potency / 25, 1))
+			reagents.add_reagent("mushroomhallucinogen", 1+round(potency / 25, 1))
 			bitesize = 1+round(reagents.total_volume / 2, 1)
 
 /obj/item/weapon/reagent_containers/food/snacks/grown/mushroom/angel/attackby(var/obj/item/O as obj, var/mob/user as mob)
 	. = ..()
 	if (istype(O, /obj/item/device/analyzer/plant_analyzer))
 		user << "<span class='info'>- Amatoxins: <i>[reagents.get_reagent_amount("amatoxin")]%</i></span>"
-		user << "<span class='info'>- Psilocybin: <i>[reagents.get_reagent_amount("psilocybin")]%</i></span>"
+		user << "<span class='info'>- Mushroom Hallucinogen: <i>[reagents.get_reagent_amount("mushroomhallucinogen")]%</i></span>"
 
 /obj/item/weapon/reagent_containers/food/snacks/grown/mushroom/libertycap
 	seed = "/obj/item/seeds/libertymycelium"
@@ -832,13 +806,13 @@
 		..()
 		spawn(5)	//So potency can be set in the proc that creates these crops
 			reagents.add_reagent("nutriment", 1+round((potency / 50), 1))
-			reagents.add_reagent("psilocybin", 3+round(potency / 5, 1))
+			reagents.add_reagent("mushroomhallucinogen", 3+round(potency / 5, 1))
 			bitesize = 1+round(reagents.total_volume / 2, 1)
 
 /obj/item/weapon/reagent_containers/food/snacks/grown/mushroom/libertycap/attackby(var/obj/item/O as obj, var/mob/user as mob)
 	. = ..()
 	if (istype(O, /obj/item/device/analyzer/plant_analyzer))
-		user << "<span class='info'>- Psilocybin: <i>[reagents.get_reagent_amount("psilocybin")]%</i></span>"
+		user << "<span class='info'>- Mushroom Hallucinogen: <i>[reagents.get_reagent_amount("mushroomhallucinogen")]%</i></span>"
 
 /obj/item/weapon/reagent_containers/food/snacks/grown/mushroom/plumphelmet
 	seed = "/obj/item/seeds/plumpmycelium"
@@ -878,7 +852,7 @@
 	New()
 		..()
 		spawn(5)	//So potency can be set in the proc that creates these crops
-			reagents.add_reagent("nutriment",1+round((potency / 25), 1))
+			reagents.add_reagent("nutriment", 1+round((potency / 25), 1))
 			bitesize = 1+round(reagents.total_volume / 2, 1)
 
 /obj/item/weapon/reagent_containers/food/snacks/grown/mushroom/glowshroom
@@ -897,7 +871,7 @@
 			potency = 30
 			plant_type = 2
 		spawn(5)	//So potency can be set in the proc that creates these crops
-			reagents.add_reagent("radium",1+round((potency / 20), 1))
+			reagents.add_reagent("radium", 1+round((potency / 20), 1))
 		if(istype(src.loc,/mob))
 			pickup(src.loc)//adjusts the lighting on the mob
 		else
@@ -971,3 +945,21 @@
 			reagents.add_reagent("nutriment", 1+round((potency / 20), 1))
 			reagents.add_reagent("singulo", 1+round((potency / 5), 1))
 			bitesize = 1+round(reagents.total_volume / 2, 1)
+
+/obj/item/weapon/reagent_containers/food/snacks/grown/gatfruit
+	seed = "/obj/item/seeds/gatfruit"
+	name = "gatfruit"
+	desc = "It smells like burning."
+	icon_state = "gatfruit"
+	potency = 60
+	origin_tech = "combat=3"
+	trash = /obj/item/weapon/gun/projectile/revolver
+	New()
+		..()
+		spawn(5)	//So potency can be set in the proc that creates these crops
+			reagents.add_reagent("sulfur", 1+round((potency / 10), 1))
+			reagents.add_reagent("carbon", 1+round((potency / 10), 1))
+			reagents.add_reagent("nitrogen", 1+round((potency / 15), 1))
+			reagents.add_reagent("potassium", 1+round((potency / 20), 1))
+			bitesize = 1+round(reagents.total_volume / 2, 1)
+

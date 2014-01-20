@@ -5,6 +5,7 @@
 
 /obj/item/weapon/grab
 	name = "grab"
+	flags = NOBLUDGEON | ABSTRACT
 	icon = 'icons/mob/screen_gen.dmi'
 	icon_state = "reinforce"
 	flags = NOBLUDGEON
