@@ -9,12 +9,12 @@
 			src.bodytemperature += 2
 
 		//grabs
-		var/list/grabs = list()
+		var/obj/item/weapon/grab/G
 		if(istype(l_hand, /obj/item/weapon/grab))
-			grabs += l_hand
+			G = l_hand
+			G.move(NewLoc)
 		if(istype(r_hand, /obj/item/weapon/grab))
-			grabs += r_hand
-		for(var/obj/item/weapon/grab/G in grabs)
+			G = r_hand
 			G.move(NewLoc)
 
 /mob/living/carbon/movement_delay()

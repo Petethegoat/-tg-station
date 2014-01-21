@@ -247,7 +247,7 @@
 
 	for(var/obj/item/weapon/grab/G in grabs)
 		if(G.state >= GRAB_AGGRESSIVE)
-			if(!(G.grab_flags & FIREMAN))
+			if(G.state != GRAB_CARRY)
 				var/turf/T = get_step(get_turf(mob), direct)
 				if(get_dist(G.affecting, T) > 1 || T == get_turf(G.affecting))
 					return 1

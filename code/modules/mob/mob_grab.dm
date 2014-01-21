@@ -1,8 +1,6 @@
 #define UPGRADE_COOLDOWN	30
 #define UPGRADE_KILL_TIMER	80
 
-#define FIREMAN 1
-
 /obj/item/weapon/grab
 	name = "grab"
 	flags = NOBLUDGEON | ABSTRACT
@@ -12,7 +10,6 @@
 	var/mob/affecting = null
 	var/mob/assailant = null
 	var/state = GRAB_PASSIVE
-	var/grab_flags = 0
 	var/allow_upgrade = 1
 	var/last_upgrade = 0
 
@@ -186,7 +183,8 @@
 			if(do_after(M, 40))
 				affecting.visible_message("<span class='danger'>[M] has pulled [affecting] into a fireman's carry!</span>", \
 										  "<span class='userdanger'>[M] has pulled [affecting] into a fireman's carry!</span>")
-				grab_flags |= FIREMAN
+				state = GRAB_CARRY
+				icon_state = "carry/up"
 				affecting.pixel_y = 10
 				affecting.resting = 1
 		else
@@ -194,7 +192,7 @@
 
 
 /obj/item/weapon/grab/proc/move(turf/T)
-	if(grab_flags & FIREMAN)
+	if(state == GRAB_CARRY)
 		affecting.Move(T)
 
 
@@ -202,7 +200,7 @@
 	del(src)
 
 /obj/item/weapon/grab/Del()
-	if(grab_flags & FIREMAN)
+	if(state == GRAB_CARRY)
 		affecting.pixel_y = 0
 	..()
 
