@@ -27,19 +27,6 @@
 	assailant = user
 	affecting = victim
 
-	if(affecting.anchored)
-		del(src)
-
-
-//Used by throw code to hand over the mob, instead of throwing the grab. The grab is then deleted by the throw code.
-/obj/item/weapon/grab/proc/throw()
-	if(affecting)
-		if(affecting.buckled)
-			return null
-		if(state >= GRAB_AGGRESSIVE)
-			return affecting
-	return null
-
 
 /obj/item/weapon/grab/process()
 	confirm()
@@ -49,7 +36,7 @@
 
 	assailant.face_atom(affecting)
 	affecting.face_atom(assailant)
-
+/*
 	if(state <= GRAB_AGGRESSIVE)
 		allow_upgrade = 1
 		if((assailant.l_hand && assailant.l_hand != src && istype(assailant.l_hand, /obj/item/weapon/grab)))
@@ -82,7 +69,7 @@
 	if(state >= GRAB_KILL)
 		affecting.Weaken(5)	//Should keep you down unless you get help.
 		affecting.losebreath = min(affecting.losebreath + 2, 3)
-
+*/
 
 /obj/item/weapon/grab/attack_self()
 	if(!affecting)
@@ -96,7 +83,7 @@
 		return
 
 	last_upgrade = world.time
-
+/*
 	if(state < GRAB_AGGRESSIVE)
 		if(!allow_upgrade)
 			return
@@ -141,6 +128,7 @@
 			assailant.visible_message("<span class='warning'>[assailant] was unable to tighten \his grip on [affecting]'s neck!</span>")
 			icon_state = "choke"
 			state = GRAB_NECK
+*/
 
 
 //This is used to make sure the victim hasn't managed to yackety sax away before using the grab.
@@ -184,6 +172,14 @@
 			del(src)
 
 
+//Used by throw code to hand over the mob, instead of throwing the grab. The grab is then deleted by the throw code.
+/obj/item/weapon/grab/proc/throw()
+	if(state >= GRAB_AGGRESSIVE && !affecting.buckled)
+		return affecting
+
+	return null
+
+
 /obj/item/weapon/grab/MouseDrop(mob/M)
 	if(ishuman(M) && assailant == M)
 		if(state >= GRAB_AGGRESSIVE)
@@ -212,22 +208,29 @@
 
 
 /mob/proc/grab(mob/user)
+	if(anchored)
+		return
 	if(user == src)
 		return
 	if(!(status_flags & CANPUSH))
 		return
-
-	var/obj/item/weapon/grab/G = new /obj/item/weapon/grab(user, src)
 	if(buckled)
 		user << "<span class='notice'>You cannot grab [src], \he is buckled in!</span>"
-	if(!G)	//the grab will delete itself in New if affecting is anchored
 		return
 
-	add_logs(user, src, "grabbed", addition = "passively")
+	var/obj/item/weapon/grab/G = new /obj/item/weapon/grab(user, src)
+	var/how = "passively"
+
+	if(user.a_intent == "harm")
+		how = "aggressively"
+		G.state = GRAB_AGGRESSIVE
+		G.icon_state = "choke"
+
+	add_logs(user, src, "grabbed", addition = how)
 
 	user.put_in_active_hand(G)
 	grabbed_by += G
 	LAssailant = user
 
 	playsound(loc, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
-	visible_message("<span class='warning'>[user] has grabbed [src] passively!</span>")
+	visible_message("<span class='warning'>[user] has grabbed [src] [how]!</span>")

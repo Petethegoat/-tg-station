@@ -357,57 +357,52 @@
 
 /mob/proc/throw_item(atom/target)
 	return
+
 /mob/living/carbon/throw_item(atom/target)
-	throw_mode_off()
-	if(usr.stat || !target)
+	if(stat != CONSCIOUS || !target)
 		return
-	if(target.type == /obj/screen) return
+	if(target.type == /obj/screen)
+		return
 
-	var/atom/movable/item = src.get_active_hand()
+	var/atom/movable/AM = get_active_hand()
 
-	if(!item) return
+	if(!AM)
+		return
 
-	if(istype(item, /obj/item/weapon/grab))
-		var/obj/item/weapon/grab/G = item
-		item = G.throw() //throw the person instead of the grab
+	throw_mode_off()
+
+	if(istype(AM, /obj/item/weapon/grab))
+		var/obj/item/weapon/grab/G = AM
+		AM = G.throw() //throw the person instead of the grab
 		del(G)			//We delete the grab, as it needs to stay around until it's returned.
-		if(ismob(item))
+		if(ismob(AM))
 			var/turf/start_T = get_turf(loc) //Get the start and target tile for the descriptors
 			var/turf/end_T = get_turf(target)
 			if(start_T && end_T)
-				var/mob/M = item
+				var/mob/M = AM
 				var/start_T_descriptor = "<font color='#6b5d00'>tile at [start_T.x], [start_T.y], [start_T.z] in area [get_area(start_T)]</font>"
 				var/end_T_descriptor = "<font color='#6b4400'>tile at [end_T.x], [end_T.y], [end_T.z] in area [get_area(end_T)]</font>"
 
 				add_logs(usr, M, "thrown", admin=0, addition="from [start_T_descriptor] with the target [end_T_descriptor]")
 
-	if(!item) return //Grab processing has a chance of returning null
+	if(!AM)
+		return	//Grab processing has a chance of returning null
 
-	u_equip(item)
-	if(src.client)
-		src.client.screen -= item
+	u_equip(AM)
 
 	//actually throw it!
-	if(item)
-		item.layer = initial(item.layer)
-		src.visible_message("\red [src] has thrown [item].")
+	if(AM)
+		AM.layer = initial(AM.layer)
+		visible_message("<span class='warning'>[src] has thrown [AM].</span>")
 
-		if(!src.lastarea)
-			src.lastarea = get_area(src.loc)
-		if((istype(src.loc, /turf/space)) || (src.lastarea.has_gravity == 0))
-			src.inertia_dir = get_dir(target, src)
+		if(!lastarea)
+			lastarea = get_area(loc)
+		if((istype(loc, /turf/space)) || lastarea.has_gravity == 0)
+			inertia_dir = get_dir(target, src)
 			step(src, inertia_dir)
 
+		AM.throw_at(target, AM.throw_range, AM.throw_speed)
 
-/*
-		if(istype(src.loc, /turf/space) || (src.flags & NOGRAV)) //they're in space, move em one space in the opposite direction
-			src.inertia_dir = get_dir(target, src)
-			step(src, inertia_dir)
-*/
-
-
-
-		item.throw_at(target, item.throw_range, item.throw_speed)
 
 /mob/living/carbon/can_use_hands()
 	if(handcuffed)

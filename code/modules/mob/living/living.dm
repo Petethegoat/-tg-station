@@ -445,7 +445,7 @@
 						L.visible_message("<span class='warning'>[L] has broken free of [G.assailant]'s grip!</span>")
 						del(G)
 				else
-					if(G.state == GRAB_NECK)
+					if(G.state == GRAB_CHOKE)
 						if(prob(5))
 							L.visible_message("<span class='warning'>[L] has broken free of [G.assailant]'s headlock!</span>")
 							del(G)

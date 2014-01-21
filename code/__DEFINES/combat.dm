@@ -35,9 +35,9 @@
 //Grab levels
 #define GRAB_PASSIVE	1
 #define GRAB_AGGRESSIVE	2
-#define GRAB_NECK		3
-#define GRAB_UPGRADING	4
-#define GRAB_KILL		5
+#define GRAB_CHOKE		4
+#define GRAB_CARRY		5
+#define GRAB_UPGRADING	10
 
 #define HOSTILE_STANCE_IDLE			1
 #define HOSTILE_STANCE_ALERT		2
